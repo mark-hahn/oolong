@@ -1,305 +1,34 @@
-![teacup](https://raw.github.com/goodeggs/teacup/master/docs/teacup.jpg)
+Oolong
+======
 
-Teacup is templates in CoffeeScript.
+A lightweight Coffeescript DSL to create DOM elements and bind them to plain objects.
 
-Compose DSL functions to build strings of HTML.
-Package templates and helpers in CommonJS, AMD modules, or vanilla coffeescript.
-Integrate with the tools you love: Express, Backbone, Rails, and more.
+Oolong  extends the concept of the excellent HTML-generating DSL [Teacup](https://github.com/goodeggs/teacup).  It is different though in that instead of generating HTML text it generates DOM elements directly. This has been shown to be more efficient than using text as an intermediate language.  
 
-[![Build Status](https://travis-ci.org/goodeggs/teacup.png)](https://travis-ci.org/goodeggs/teacup)
-[![NPM version](https://badge.fury.io/js/teacup.png)](http://badge.fury.io/js/teacup)
+The other big difference is that it implements a real-time bi-directional binding between plain old javascript objects (POJOs) and the DOM. This feature is kept to a bare-bones simple model that provides no other features.  The intention is to later add other features on top of this core to implement a more featured framework like Knockout, React, or Angular.  One can think of Oolong as the opposite of Backbone since Backbone has no binding or built-in templating as Oolong does but offers all other features.  The possibility of using Backbone with Oolong has not been studied.
 
-The Basics
----------------
+Like other good binding frameworks Oolong keeps a shadow DOM that is only applied to the real DOM at critical times.  This offers improved efficiencies over constant manipulation of the DOM.  One unigue aspect of the Oolong shadow DOM is that it consists of real DOM element objects.  It is known that DOM elements not attached to the real DOM are more efficiently managed than attached ones.
 
-Use the `renderable` helper to create a function that returns an HTML string when called.
+Oolong also provides components similar to React components but much simpler. All subtrees of the DOM are actually components that can be easily reused.
 
-```coffee
-{renderable, ul, li, input} = require 'teacup'
+Oolong supports scopes for bound variables as other binding frameworks do. The bound variable names just need to be included in an array for each component. This array specifies the scope. Inheritance and closures are fully supported.
 
-template = renderable (teas)->
-  ul ->
-    for tea in teas
-      li tea
-    input type: 'button', value: 'Steep'
+Referencing bound variables in the template requires no special syntax.  All usages of a bound variable are automatically synchronized.  When bound variables change only the shadow elements (components) that are affected are regenerated.
 
-console.log template(['Jasmine', 'Darjeeling'])
-# Outputs <ul><li>Jasmine</li><li>Darjeeling</li></ul><input type="button" value="Steep"/>
-```
+# Sample Code
 
-Use the `render` helper to render a template to a string immediately.
+	{comp, input} = Oolong
+	scope = ['firstName', 'lastName']
+	
+	nameField = comp scope, ->
+		input id: 'name', type: 'text', value: firstName + ' ' + lastName
+	
+	Oolong.attach 'body', nameField # nothing appears in body
+	
+	firstName = 'Hello'; lastName = 'World'  # input field appears containing "Hello World"
 
-```coffee
-{render, ul, li} = require 'teacup'
+# Status
 
-output = render ->
-  ul ->
-    li 'Bergamont'
-    li 'Chamomile'
+Just a twinkle in my eye for now.  Development will begin soon.
 
-console.log output
-# Outputs <ul><li>Bergamont</li><li>Chamomile</li></ul>
-```
-
-
-### Express
-
-To use Teacup as your Express template engine:
-
-Install from npm
-
-    $ npm install teacup
-
-Register Teacup as a view engine.
-
-```coffee
-express = require 'express'
-teacup = require 'teacup/lib/express'
-
-app = express()
-app.configure ->
-  app.engine "coffee", teacup.renderFile
-```
-
-Then write your views as regular old coffee files that export a renderable template.
-
-```coffee
-# views/example.coffee
-{renderable, div, h1} = require 'teacup'
-
-module.exports = renderable ({title}) ->
-  div '#example', ->
-    h1 "Hello, #{title}"
-```
-
-You can use Teacup templates even if your Express app is not using CoffeeScript.
-
-### connect-assets
-
-If you are using [connect-assets](https://github.com/TrevorBurnham/connect-assets) to compile your CoffeeScript in
-an asset pipeline, you can use the Teacup middleware which registers connect-assets `js` and `css` helpers with Teacup.
-
-Grab the module to get started
-
-    $ npm install teacup
-
-Then configure the middleware
-
-```coffee
-express = require 'express'
-connectAssets = require 'teacup/lib/connect-assets'
-app = express()
-app.configure ->
-  app.use connectAssets(src: 'assets', jsDir: 'javascripts', cssDir: 'stylesheets')
-```
-
-And in your templates:
-
-```coffee
-{renderable, js, css, html, head, body} = require 'teacup'
-
-module.exports = renderable ->
-  html ->
-    head ->
-      js 'app'
-      css 'app'
-    body ->
-      # ...
-```
-
-The Teacup middleware passes the provided options to connect-assets and returns an instance of the connect-assets middleware.
-
-### Browser
-
-To use for client-side rendering, all you need is [teacup.js](https://raw.github.com/goodeggs/teacup/master/lib/teacup.js).  You can
-toss it in a script tag, `require()` and browserify it, load it with an AMD loader, send it down an asset pipeline
-like Rails or connect-assets, or use some sweet custom build process.
-
-Teacup claims window.teacup if you arent using AMD or CommonJS.
-
-```coffee
-{renderable, ul, li} = teacup
-
-template = renderable (items)->
-  ul ->
-    li item for item in items
-
-console.log template(['One', 'Two'])
-```
-
-### Backbone
-
-Feel free to write your template in the same file as a Backbone View and call it from `view.render()` like so:
-
-```coffee
-{renderable, div, h1, ul, li, p, form, input} = teacup
-
-template = renderable (kids) ->
-  div ->
-    h1 "Welcome to our tea party"
-    p "We have a few kids at the table..."
-    ul ->
-      kids.each (kid) ->
-        li kid.get 'name'
-    form ->
-      input placeholder: 'Add another'
-
-class PartyView extends Backbone.View
-
-  constructor: (kids) ->
-    @kids = new Backbone.Collection kids
-    super()
-
-  render: ->
-    @$el.html template(@kids)
-    @$('form input').focus()
-    @
-
-```
-Check out [teacup-backbone-example](https://github.com/goodeggs/teacup-backbone-example) for a complete Backbone + Express app.
-
-
-### Rails
-
-The [Teacup::Rails](https://github.com/goodeggs/teacup-rails) gem makes Teacup available to the asset pipeline in Rails 3.1+.
-
-Guide
----------
-
-### Ids and Classes
-
-Pass a CSS selector as the first argument to a tag function to add ids and classes.
-
-```coffee
-{render, div} = require 'teacup'
-
-console.log render ->
-  div '#confirm.btn.btn-small'
-# Outputs <div id="confirm" class="btn btn-small"></div>
-```
-
-### Attributes
-
-Define tag attributes with object literals.
-
-```coffee
-{render, button} = require 'teacup'
-
-console.log render ->
-  button '.btn', type: 'button', disabled: true, 'Click Me'
-# Outputs <button class="btn" type="button" disabled="disabled">Click Me</button>
-```
-
-### Escaping
-
-Teacup escapes input by default. To disable escaping, use the `raw` helper.
-
-```coffee
-{render, raw, h1, div} = require 'teacup'
-
-inner = render ->
-  h1 'Header'
-
-console.log render ->
-  div inner
-# Outputs <div>&lt;h1&gt;Header&lt;/h1&gt;</div>
-
-console.log render ->
-  div ->
-    raw inner
-# Outputs <div><h1>Header</h1></div>
-```
-
-### Text
-
-The text helper inserts a string in the template without wrapping it in a tag.  It creates a [text node](https://developer.mozilla.org/en-US/docs/DOM/Text).
-
-```coffee
-{render, text, b, em, p} = require 'teacup'
-
-console.log render ->
-  p ->
-    text 'Sometimes you just want '
-    b 'plain'
-    text ' text.'
-# Outputs <p>Sometimes you just want <b>plain</b> text.</p>
-```
-
-### Helpers
-
-Write view helpers as renderable functions and require them as needed.
-
-Here's a helpers file that defines a set of [microformats](http://microformats.org/wiki/hcalendar).
-
-```coffee
-# views/microformats.coffee
-{renderable, span, text} = require 'teacup'
-moment = require 'moment'
-
-module.exports =
-  hcalendar: renderable ({date, location, summary}) ->
-    span ".vevent", ->
-      span ".summary", summary
-      text " on "
-      span ".dtstart", moment(date).format("YYYY-MM-DD")
-      text " was in "
-      span ".location", location
-```
-
-And a view that uses one of the helpers.
-
-```coffee
-# views/events.coffee
-{renderable, ul, li} = require 'teacup'
-{hcalendar} = require './microformats'
-
-module.exports = renderable ({events}) ->
-  ul ->
-    for event in events
-      li ->
-        hcalendar event
-```
-
-You can write helpers that support css selector classnames and ids using `normalizeArgs`:
-
-```coffee
-{normalizeArgs, input} = require 'teacup'
-
-textInput = ->
-  {attrs, contents} = normalizeArgs arguments
-  attrs.type = 'text'
-  input attrs, contents
-```
-
-### Compiling Templates
-
-Just use the CoffeeScript compiler.  Uglify will make em real small.
-
-```
-$ coffee -c -o build src
-```
-
-FAQ
-----
-
-**How's this different from CoffeeCup?**
-
-[CoffeeCup](http://github.com/gradus/coffeecup) is the currently maintained fork of
-[CoffeeKup](http://github.com/mauricemach/coffeekup) and is what we were using at Good Eggs before switching to Teacup.
-The problem with CoffeeCup is that it uses some `eval` magic to put the tag functions in scope. This magic breaks
-closure scope so you can't actually write templates using the functional constructs that you'd expect.
-
-Legacy
--------
-
-[Markaby](http://github.com/markaby/markaby) begat [CoffeeKup](http://github.com/mauricemach/coffeekup) begat
-[CoffeeCup](http://github.com/gradus/coffeecup) and [DryKup](http://github.com/mark-hahn/drykup) which begat **Teacup**.
-
-Contributing
--------------
-
-```
-$ git clone https://github.com/goodeggs/teacup && cd teacup
-$ npm install
-$ npm test
-```
+#Standard MIT license
