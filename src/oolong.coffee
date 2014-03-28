@@ -42,7 +42,7 @@ merge_elements = (args...) ->
   result
 
 
-class Teacup
+class Oolong
   constructor: ->
     @htmlOut = null
 
@@ -63,14 +63,14 @@ class Teacup
   cede: (args...) -> @render(args...)
 
   renderable: (template) ->
-    teacup = @
+    oolong = @
     return (args...) ->
-      if teacup.htmlOut is null
-        teacup.htmlOut = ''
+      if oolong.htmlOut is null
+        oolong.htmlOut = ''
         try
           template.apply @, args
         finally
-          result = teacup.resetBuffer()
+          result = oolong.resetBuffer()
         return result
       else
         template.apply @, args
@@ -173,7 +173,7 @@ class Teacup
   selfClosingTag: (tag, args...) ->
     {attrs, contents} = @normalizeArgs args
     if contents
-      throw new Error "Teacup: <#{tag}/> must not have content.  Attempted to nest #{contents}"
+      throw new Error "Oolong: <#{tag}/> must not have content.  Attempted to nest #{contents}"
     @raw "<#{tag}#{@renderAttrs attrs} />"
 
   coffeescript: (fn) ->
@@ -198,7 +198,7 @@ class Teacup
 
   text: (s) ->
     unless @htmlOut?
-      throw new Error("Teacup: can't call a tag function outside a rendering context")
+      throw new Error("Oolong: can't call a tag function outside a rendering context")
     @htmlOut += s? and @escape(s.toString()) or ''
 
   raw: (s) ->
@@ -239,22 +239,22 @@ class Teacup
 # Define tag functions on the prototype for pretty stack traces
 for tagName in merge_elements 'regular', 'obsolete'
   do (tagName) ->
-    Teacup::[tagName] = (args...) -> @tag tagName, args...
+    Oolong::[tagName] = (args...) -> @tag tagName, args...
 
 for tagName in merge_elements 'raw'
   do (tagName) ->
-    Teacup::[tagName] = (args...) -> @rawTag tagName, args...
+    Oolong::[tagName] = (args...) -> @rawTag tagName, args...
 
 for tagName in merge_elements 'void', 'obsolete_void'
   do (tagName) ->
-    Teacup::[tagName] = (args...) -> @selfClosingTag tagName, args...
+    Oolong::[tagName] = (args...) -> @selfClosingTag tagName, args...
 
 if module?.exports
-  module.exports = new Teacup().tags()
-  module.exports.Teacup = Teacup
+  module.exports = new Oolong().tags()
+  module.exports.Oolong = Oolong
 else if typeof define is 'function' and define.amd
-  define('teacup', [], -> new Teacup().tags())
+  define('oolong', [], -> new Oolong().tags())
 else
-  window.teacup = new Teacup().tags()
-  window.teacup.Teacup = Teacup
+  window.oolong = new Oolong().tags()
+  window.oolong.Oolong = Oolong
 

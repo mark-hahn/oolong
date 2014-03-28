@@ -1,12 +1,12 @@
 {
-  "name": "teacup",
+  "name": "oolong",
   "version": "0.3.1",
   "description": "Render HTML with native CoffeeScript templates. No magic, no fuss.",
-  "homepage": "http://goodeggs.github.com/teacup/",
-  "main": "lib/teacup",
+  "homepage": "http://mark-hahn.github.com/oolong/",
+  "main": "lib/oolong",
   "repository": {
     "type": "git",
-    "url": "git://github.com/goodeggs/teacup.git"
+    "url": "git://github.com/mark-hahn/oolong.git"
   },
   "keywords": [
     "template",
